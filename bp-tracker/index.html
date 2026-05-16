@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="description" content="Local-first PWA for tracking blood pressure — stores readings as FHIR R4 JSON in SQLite.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>BP Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="192" height="192" rx="40" fill="white" fill-opacity=".18"/>
+          <path d="M96 152L30 90C16 74 20 50 44 42 62 36 80 48 96 68 112 48 130 36 148 42 172 50 176 74 162 90Z"
+                fill="white" opacity=".92"/>
+          <polyline points="48,96 64,96 74,70 86,122 98,80 110,96 144,96"
+                    stroke="#1d4ed8" stroke-width="7" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>BP Tracker</span>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-export" class="btn-icon" title="Export FHIR R4 bundle" aria-label="Export FHIR bundle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
+        <button id="btn-install" class="btn-icon hidden" title="Install app" aria-label="Install app">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+            <line x1="12" y1="18" x2="12" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="card" aria-labelledby="form-heading">
+      <h2 id="form-heading">New Reading</h2>
+      <form id="bp-form" novalidate>
+
+        <div class="reading-inputs">
+          <div class="input-group">
+            <label for="systolic">Systolic</label>
+            <input type="number" id="systolic" min="60" max="300"
+                   placeholder="120" required inputmode="numeric" autocomplete="off">
+            <span class="unit">mmHg</span>
+          </div>
+          <div class="divider" aria-hidden="true">/</div>
+          <div class="input-group">
+            <label for="diastolic">Diastolic</label>
+            <input type="number" id="diastolic" min="30" max="200"
+                   placeholder="80" required inputmode="numeric" autocomplete="off">
+            <span class="unit">mmHg</span>
+          </div>
+        </div>
+
+        <div class="secondary-inputs">
+          <div class="input-group">
+            <label for="pulse">Pulse</label>
+            <input type="number" id="pulse" min="30" max="250"
+                   placeholder="72" inputmode="numeric" autocomplete="off">
+            <span class="unit">bpm</span>
+          </div>
+          <div class="input-group">
+            <label for="arm">Arm</label>
+            <select id="arm">
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="position">Position</label>
+            <select id="position">
+              <option value="sitting">Sitting</option>
+              <option value="standing">Standing</option>
+              <option value="lying">Lying</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-group full">
+          <label for="measured-at">Date &amp; Time</label>
+          <input type="datetime-local" id="measured-at" required>
+        </div>
+
+        <div class="input-group full">
+          <label for="notes">Notes</label>
+          <textarea id="notes" placeholder="Optional notes (medication taken, activity, stress…)" rows="2"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <div id="bp-preview" class="bp-preview hidden" role="status" aria-live="polite"></div>
+          <button type="submit" id="btn-save" class="btn-primary" disabled>Save Reading</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="chart-heading">
+      <h2 id="chart-heading">Trend</h2>
+      <div class="chart-wrapper">
+        <canvas id="bp-chart" role="img" aria-label="Blood pressure trend chart"></canvas>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="history-heading">
+      <h2 id="history-heading">History</h2>
+      <div id="history-list" aria-live="polite" aria-atomic="true">
+        <p class="empty-state">No readings yet. Add your first reading above.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
+          crossorigin="anonymous"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

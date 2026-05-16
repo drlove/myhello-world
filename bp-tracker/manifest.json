@@ -1,0 +1,12 @@
+{
+  "name": "Blood Pressure Tracker",
+  "short_name": "BP Tracker",
+  "description": "Local-first PWA for tracking blood pressure with FHIR R4 JSON storage in SQLite",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8fafc",
+  "theme_color": "#1d4ed8",
+  "categories": ["health", "medical"],
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

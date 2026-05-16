@@ -1,0 +1,10 @@
+{
+  "name": "bp-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-first blood pressure PWA with FHIR R4 JSON storage in SQLite",
+  "scripts": {
+    "start": "npx --yes serve . --listen 3000 --single",
+    "dev": "npx --yes serve . --listen 3000 --single"
+  }
+}
